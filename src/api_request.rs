@@ -120,12 +120,10 @@ impl SmiteApiClient {
         let timestamp = Self::timestamp();
         Ok(self
             .base_url
-            .join(
-                &format!(
-                    "{}/{}/{}/{}/{}",
-                    &method, &self.dev_id, &signature, &self.dev_key, &timestamp
-                )
-            )
+            .join(&format!(
+                "{}/{}/{}/{}/{}",
+                &method, &self.dev_id, &signature, &self.dev_key, &timestamp
+            ))
             .map_err(|err| ClientError::UrlParseError(err, method_name))?)
     }
 

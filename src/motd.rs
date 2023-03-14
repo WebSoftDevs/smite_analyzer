@@ -1,6 +1,9 @@
 use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::{api_request::{ClientError, SmiteApiClient}, motd_mode::MotdMode};
+use crate::{
+    api_request::{ClientError, SmiteApiClient},
+    motd_mode::MotdMode,
+};
 
 #[allow(unused_variables)]
 #[derive(Debug, Serialize, Deserialize)]
