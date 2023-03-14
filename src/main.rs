@@ -1,10 +1,25 @@
 #![warn(clippy::pedantic)]
+#![allow(clippy::missing_panics_doc, clippy::missing_errors_doc)]
+pub mod api_request;
+pub mod motd;
+pub mod motd_mode;
+
+use crate::api_request::SmiteApiClient;
+
 use dotenv::dotenv;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     dotenv().ok();
-    let smite_api_key = std::env::var("SMITE_API_KEY").expect("SMITE_API_KEY not found.");
-    if smite_api_key.chars().count() == 0 {
-        panic!("Value for key SMITE_API_KEY is empty.");
-    }
+    let smite_dev_key =
+        std::env::var("SMITE_DEV_KEY").expect("SMITE_DEV_KEY not present in env variables");
+
+    let smite_dev_id =
+        std::env::var("SMITE_DEV_ID").expect("SMITE_DEV_ID not present in env variables");
+
+    let mut client = SmiteApiClient::new(smite_dev_key, smite_dev_id);
+
+    let motds = client.get_motd().await.unwrap();
+
+    dbg!(motds);
 }
