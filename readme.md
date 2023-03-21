@@ -1,5 +1,10 @@
 ## Smite Analyzer
 
+![maintenance](https://img.shields.io/maintenance/yes/2025)
+![version](https://img.shields.io/github/v/tag/WebSoftDevs/smite_analyzer?style=plastic)
+![build](https://img.shields.io/github/actions/workflow/status/WebSoftDevs/smite_analyzer/ci-cd.yml)
+
+
 ![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white)
 ![Vue.js](https://img.shields.io/badge/vuejs-%2335495e.svg?style=for-the-badge&logo=vuedotjs&logoColor=%234FC08D)
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
@@ -9,7 +14,6 @@
 
 ## How to set up app localy
 
-<hr>
 
 - Clone repo `https://github.com/WebSoftDevs/smite_analyzer.git`
 
