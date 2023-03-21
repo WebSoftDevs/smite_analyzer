@@ -1,19 +1,20 @@
 use serde::{Deserialize, Deserializer, Serialize};
-
 use crate::{
     api_request::{ClientError, SmiteApiClient},
     motd_mode::MotdMode,
 };
+use diesel::Queryable;
 
 #[allow(unused_variables)]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Queryable)]
 #[serde(rename_all = "camelCase")]
 pub struct Motd {
+    #[serde(skip)]
+    pub id: i32,
+    pub name: String,
     pub description: String,
     pub game_mode: String,
-    #[serde(deserialize_with = "string_to_u8")]
-    pub max_players: Option<u8>,
-    pub name: String,
+    pub max_players: Option<i16>,
     pub ret_msg: Option<String>,
     pub start_date_time: String,
     #[serde(deserialize_with = "empty_string_is_none")]
@@ -23,23 +24,7 @@ pub struct Motd {
     #[serde(rename = "team2GodsCSV")]
     pub team_2_gods_csv: Option<String>,
     #[serde(rename = "title")]
-    #[serde()]
     pub mode: MotdMode,
-}
-
-fn string_to_u8<'de, D>(deserializer: D) -> Result<Option<u8>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-
-    if s.is_empty() {
-        return Ok(None);
-    }
-
-    let num: u8 = s.parse().map_err(serde::de::Error::custom)?;
-
-    Ok(Some(num))
 }
 
 fn empty_string_is_none<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>

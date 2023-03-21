@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  smite-analyzer:
+    image: smite-analyzer:dev
+    build:
+      context: .
+      dockerfile: compose/Dockerfile
+    container_name: smite-analyzer-1
+    env_file:
+      - .env
+    ports: 
+      - "8080:8080"
+    command: ["./target/release/smite-api"]
+    networks:
+      - local_db
+networks:
+  local_db:
+    external:
+      name: postgres
