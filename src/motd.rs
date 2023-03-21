@@ -1,9 +1,9 @@
-use serde::{Deserialize, Deserializer, Serialize};
 use crate::{
     api_request::{ClientError, SmiteApiClient},
     motd_mode::MotdMode,
 };
 use diesel::Queryable;
+use serde::{Deserialize, Deserializer, Serialize};
 
 #[allow(unused_variables)]
 #[derive(Debug, Serialize, Deserialize, Queryable)]

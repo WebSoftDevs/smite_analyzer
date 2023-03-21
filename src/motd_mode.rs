@@ -1,9 +1,10 @@
-#[macro_use] extern crate diesel;
+#[macro_use]
+extern crate diesel;
 use diesel::backend::Backend;
-use serde::{Deserialize, Serialize};
+use diesel::deserialize::{self, FromSql};
+use diesel::serialize::{self, Output, ToSql};
 use diesel::sql_types::VarChar;
-use diesel::deserialize::{FromSql, self};
-use diesel::serialize::{ToSql, Output, self};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, FromSqlRow)]
 #[serde(from = "String")]
@@ -36,14 +37,13 @@ impl From<String> for MotdMode {
     }
 }
 
-
 impl<DB> ToSql<VarChar, DB> for MotdMode
 where
     DB: Backend,
     String: ToSql<VarChar, DB>,
 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
-        match *self{
+        match *self {
             MotdMode::AllInArena => "All In Arena",
             MotdMode::InfiniteAssault => "Infinite Assault",
             MotdMode::Omnipotence => "Omnipotence",
@@ -52,8 +52,10 @@ where
             MotdMode::GrabBag => "Grab Bag 2.0",
             MotdMode::CooldownsArena => "Cooldowns Runneth Over",
             MotdMode::AllOutAssault => "All Out Assault 2.0",
-            _ => "test"
-        }.to_string().to_sql(out)
+            _ => "test",
+        }
+        .to_string()
+        .to_sql(out)
     }
 }
 

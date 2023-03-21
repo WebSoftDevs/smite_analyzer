@@ -2,20 +2,19 @@
 #![allow(clippy::missing_panics_doc, clippy::missing_errors_doc)]
 
 pub mod api_request;
-pub mod motd;
-pub mod motd_mode;
 pub mod handlers;
 pub mod models;
+pub mod motd;
+pub mod motd_mode;
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
 extern crate diesel;
 // use crate::api_request::SmiteApiClient;
 
-use actix_web::{App, HttpServer, middleware, web};
+use actix_web::{middleware, web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use dotenv::dotenv;
-
 
 mod schema;
 
@@ -31,7 +30,6 @@ async fn main() -> std::io::Result<()> {
     // let motds = client.get_motd().await.unwrap();
     // dbg!(motds);
 
-
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL");
@@ -40,7 +38,7 @@ async fn main() -> std::io::Result<()> {
         .build(manager)
         .expect("Failed to create pool.");
 
-    HttpServer::new(move|| {
+    HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(pool.clone()))
             .service(handlers::motds)
