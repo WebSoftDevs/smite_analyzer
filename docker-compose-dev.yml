@@ -1,13 +1,26 @@
 version: '3.8'
 services:
-  smite-analyzer:
+
+  backend:
     image: smite-analyzer:dev
     build:
       context: .
       dockerfile: compose/Dockerfile
-    container_name: smite-analyzer-1
+    container_name: smite-analyzer-api
     env_file:
       - .env
     ports: 
-      - "8080:3030"
-    command: ["./target/release/smite-api"]
+      - "8100:3030"
+    command: ["/app/target/release/smite-api"]
+    
+  frontend:
+    image: smite-analyzer-front:dev
+    build:
+      context: .
+      dockerfile: compose/Dockerfile-front
+    container_name: smite-analyzer-frontend
+    command: ["npm", "run", "serve"]
+    ports: 
+      - "3000:8080"
+    depends_on:
+      - backend
