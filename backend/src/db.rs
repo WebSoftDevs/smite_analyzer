@@ -2,7 +2,9 @@ use std::env;
 
 use diesel::{pg::PgConnection, Connection};
 
+#[must_use]
 pub fn open_connection() -> PgConnection {
+    //
     dotenv::dotenv().ok();
     PgConnection::establish(
         env::var("DATABASE_URL")

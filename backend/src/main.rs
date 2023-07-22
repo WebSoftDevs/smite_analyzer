@@ -6,44 +6,36 @@ pub mod motd;
 pub mod motd_mode;
 pub mod schema;
 
-use crate::{api_request::SmiteApiClient, motd::Motd};
+use crate::api_request::SmiteApiClient;
 
-use chrono::DateTime;
-use diesel::{PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
+use actix_web::{App, HttpServer};
+use diesel::PgConnection;
 use dotenv::dotenv;
-use schema::motds;
+use lazy_static::lazy_static;
+use motd::get_all_motds;
+use tokio::sync::Mutex;
 
-#[tokio::main]
-async fn main() {
-    dotenv().ok();
-    //
-    let smite_dev_key =
-        std::env::var("SMITE_DEV_KEY").expect("SMITE_DEV_KEY not present in env variables");
+lazy_static! {
+    pub static ref SMITE_API_CLIENT: Mutex<SmiteApiClient> = {
+        dotenv().ok();
 
-    let smite_dev_id =
-        std::env::var("SMITE_DEV_ID").expect("SMITE_DEV_ID not present in env variables");
+        let smite_dev_key =
+            std::env::var("SMITE_DEV_KEY").expect("SMITE_DEV_KEY not present in env variables");
 
-    let mut client = SmiteApiClient::new(smite_dev_key, smite_dev_id);
-    println!("Hi");
+        let smite_dev_id =
+            std::env::var("SMITE_DEV_ID").expect("SMITE_DEV_ID not present in env variables");
 
-    use self::schema::motds::dsl::motds;
-    let mut connection = db::open_connection();
-    let results: Vec<Motd> = motds
-        .limit(5)
-        .select(Motd::as_select())
-        .load(&mut connection)
-        .unwrap();
-
-    println!("Displaying {} motds", results.len());
-    for result in results {
-        dbg!(result);
-    }
+        SmiteApiClient::new(smite_dev_key, smite_dev_id).into()
+    };
+    pub static ref DB_CONNECTION: Mutex<PgConnection> = db::open_connection().into();
 }
 
-async fn insert_motd(client: &mut SmiteApiClient, conn: &mut PgConnection) {
-    let res = client.get_motd().await.unwrap();
-    diesel::insert_into(motds::table)
-        .values(&res)
-        .execute(conn)
-        .unwrap();
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    println!("REST server started.");
+
+    HttpServer::new(|| App::new().service(get_all_motds))
+        .bind(("0.0.0.0", 8080))?
+        .run()
+        .await
 }

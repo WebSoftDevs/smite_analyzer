@@ -1,11 +1,16 @@
-use diesel::{Queryable, Selectable, Insertable};
+use actix_web::{get, HttpResponse, Responder};
+use diesel::{Insertable, Queryable, Selectable};
 use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::{
     api_request::{ClientError, SmiteApiClient},
     motd_mode::MotdMode,
+    SMITE_API_CLIENT,
 };
 
+/**
+ * Represents MOTD from the Smite API.
+ */
 #[derive(Queryable, Selectable, Insertable, Debug, Serialize, Deserialize)]
 #[diesel(table_name = crate::schema::motds)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -71,4 +76,56 @@ impl SmiteApiClient {
 
         Ok(motds)
     }
+}
+
+/**
+ * Bridge structure between the REST API and the database.
+ */
+#[derive(Serialize, Deserialize)]
+pub struct RestMotdEntity {
+    name: String,
+    description: String,
+    start_date: String,
+}
+
+/**
+ * Wrapper structure for the REST API response.
+ */
+#[derive(Serialize, Deserialize)]
+pub struct RestMotdResponse {
+    todays_motd: Option<RestMotdEntity>,
+    tommorows_motd: Option<RestMotdEntity>,
+    #[serde(default)]
+    past_motds: Vec<RestMotdEntity>,
+}
+
+impl From<&Motd> for RestMotdEntity {
+    fn from(value: &Motd) -> Self {
+        Self {
+            name: value.name.clone(),
+            description: value.description.clone(),
+            start_date: value.start_date_time.clone(),
+        }
+    }
+}
+
+#[get("/motd/get-all")]
+pub async fn get_all_motds() -> impl Responder {
+    let mut motds: Vec<RestMotdEntity> = SMITE_API_CLIENT
+        .lock()
+        .await
+        .get_motd()
+        .await
+        .unwrap()
+        .iter()
+        .map(Into::into)
+        .collect();
+
+    let response = RestMotdResponse {
+        todays_motd: motds.pop(),
+        tommorows_motd: motds.pop(),
+        past_motds: motds,
+    };
+
+    HttpResponse::Ok().json(response)
 }
