@@ -1,3 +1,4 @@
+use diesel::{Queryable, Selectable, Insertable};
 use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::{
@@ -5,14 +6,15 @@ use crate::{
     motd_mode::MotdMode,
 };
 
-#[allow(unused_variables)]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Queryable, Selectable, Insertable, Debug, Serialize, Deserialize)]
+#[diesel(table_name = crate::schema::motds)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(rename_all = "camelCase")]
 pub struct Motd {
     pub description: String,
     pub game_mode: String,
-    #[serde(deserialize_with = "string_to_u8")]
-    pub max_players: Option<u8>,
+    #[serde(deserialize_with = "string_to_i32")]
+    pub max_players: Option<i32>,
     pub name: String,
     pub ret_msg: Option<String>,
     pub start_date_time: String,
@@ -23,11 +25,17 @@ pub struct Motd {
     #[serde(rename = "team2GodsCSV")]
     pub team_2_gods_csv: Option<String>,
     #[serde(rename = "title")]
-    #[serde()]
-    pub mode: MotdMode,
+    mode: String,
 }
 
-fn string_to_u8<'de, D>(deserializer: D) -> Result<Option<u8>, D::Error>
+impl Motd {
+    #[must_use]
+    pub fn motd_mode(&self) -> MotdMode {
+        MotdMode::from(self.mode.clone())
+    }
+}
+
+fn string_to_i32<'de, D>(deserializer: D) -> Result<Option<i32>, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -37,7 +45,7 @@ where
         return Ok(None);
     }
 
-    let num: u8 = s.parse().map_err(serde::de::Error::custom)?;
+    let num: i32 = s.parse().map_err(serde::de::Error::custom)?;
 
     Ok(Some(num))
 }

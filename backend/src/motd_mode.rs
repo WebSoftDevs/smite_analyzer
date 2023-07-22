@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(from = "String")]
 pub enum MotdMode {
     AllOutAssault,
@@ -16,7 +16,6 @@ pub enum MotdMode {
 
 impl From<String> for MotdMode {
     fn from(value: String) -> Self {
-        dbg!(&value);
         match value.as_str() {
             "All Out Assault 2.0" => MotdMode::AllOutAssault,
             "Infinite Assault" => MotdMode::InfiniteAssault,
