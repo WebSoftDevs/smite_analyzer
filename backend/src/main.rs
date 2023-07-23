@@ -9,7 +9,6 @@ pub mod schema;
 use crate::api_request::SmiteApiClient;
 
 use actix_web::{App, HttpServer};
-use diesel::PgConnection;
 use dotenv::dotenv;
 use lazy_static::lazy_static;
 use motd::get_all_motds;
@@ -27,7 +26,6 @@ lazy_static! {
 
         SmiteApiClient::new(smite_dev_key, smite_dev_id).into()
     };
-    pub static ref DB_CONNECTION: Mutex<PgConnection> = db::open_connection().into();
 }
 
 #[actix_web::main]

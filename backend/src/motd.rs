@@ -1,10 +1,14 @@
 use actix_web::{get, HttpResponse, Responder};
-use diesel::{Insertable, Queryable, Selectable};
+use diesel::{
+    Insertable, PgConnection, QueryDsl, Queryable, RunQueryDsl, Selectable, SelectableHelper,
+};
 use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::{
     api_request::{ClientError, SmiteApiClient},
+    db,
     motd_mode::MotdMode,
+    schema::{self, motds},
     SMITE_API_CLIENT,
 };
 
@@ -83,6 +87,7 @@ impl SmiteApiClient {
  */
 #[derive(Serialize, Deserialize)]
 pub struct RestMotdEntity {
+    id: u8,
     name: String,
     description: String,
     start_date: String,
@@ -99,33 +104,86 @@ pub struct RestMotdResponse {
     past_motds: Vec<RestMotdEntity>,
 }
 
-impl From<&Motd> for RestMotdEntity {
-    fn from(value: &Motd) -> Self {
-        Self {
-            name: value.name.clone(),
-            description: value.description.clone(),
-            start_date: value.start_date_time.clone(),
-        }
-    }
+pub async fn update_motds_in_db(connection: &mut PgConnection) -> anyhow::Result<Vec<Motd>> {
+    let motds = SMITE_API_CLIENT.lock().await.get_motd().await?;
+
+    diesel::delete(schema::motds::table).execute(connection)?;
+
+    diesel::insert_into(schema::motds::table)
+        .values(&motds)
+        .execute(connection)?;
+
+    Ok(motds)
+}
+
+pub fn get_motds_from_db(connection: &mut PgConnection) -> anyhow::Result<Vec<Motd>> {
+    let motds = motds::table
+        .select(Motd::as_select())
+        .load::<Motd>(connection)?;
+
+    Ok(motds)
 }
 
 #[get("/motd/get-all")]
 pub async fn get_all_motds() -> impl Responder {
-    let mut motds: Vec<RestMotdEntity> = SMITE_API_CLIENT
-        .lock()
-        .await
-        .get_motd()
-        .await
-        .unwrap()
-        .iter()
-        .map(Into::into)
-        .collect();
+    let mut connection = db::open_connection();
 
-    let response = RestMotdResponse {
-        todays_motd: motds.pop(),
-        tommorows_motd: motds.pop(),
-        past_motds: motds,
+    let motds = {
+        let motds_from_db = get_motds_from_db(&mut connection);
+
+        let tomorrow = (chrono::Local::now() + chrono::Duration::days(1))
+            .format("%_m/%d/%Y")
+            .to_string()
+            .trim()
+            .to_string();
+
+        if motds_from_db.as_ref().is_ok_and(|motds| {
+            motds.iter().any(|motd| {
+                *motd
+                    .start_date_time
+                    .split_whitespace()
+                    .next()
+                    .unwrap_or_default()
+                    .to_string()
+                    == tomorrow
+            })
+        }) {
+            motds_from_db
+        } else {
+            update_motds_in_db(&mut connection).await
+        }
     };
 
-    HttpResponse::Ok().json(response)
+    match motds {
+        Ok(motds) => {
+            let mut motds: Vec<RestMotdEntity> = motds
+                .iter()
+                .enumerate()
+                .map(|(id, motd)| {
+                    let start_date = motd
+                        .start_date_time
+                        .split_whitespace()
+                        .next()
+                        .unwrap_or_default()
+                        .to_string();
+
+                    RestMotdEntity {
+                        id: id.try_into().unwrap(),
+                        name: motd.name.clone(),
+                        description: motd.description.clone(),
+                        start_date,
+                    }
+                })
+                .collect();
+
+            let response = RestMotdResponse {
+                todays_motd: motds.pop(),
+                tommorows_motd: motds.pop(),
+                past_motds: motds,
+            };
+
+            HttpResponse::Ok().json(response)
+        }
+        Err(_) => HttpResponse::NotFound().json("No motds were found."),
+    }
 }
