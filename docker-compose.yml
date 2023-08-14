@@ -1,38 +1,58 @@
 version: '3.8'
 
 services:
+
   backend:
     build: ./backend/
+    container_name: smite-analyzer-api
+    image: smite-analyzer-api:local
     ports: 
-      - "8080:8080"
-    expose:
-      - 8080
+      - "8030:8080"
+    env_file:
+      - .env
     volumes:
       - ./backend:/usr/src/app
     links:
       - db
-    environment:
-      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}"
-      SMITE_DEV_KEY: "${SMITE_DEV_KEY}"
-      SMITE_DEV_ID: "${SMITE_DEV_ID}"
     logging:
       driver: local
-    # diesel infer_schema macro gives warnings with this flag.
-    # environment:
-    #   - CARGO_INCREMENTAL=1
     command: bash -c "bash ./wait-for-it.sh db:5432 -q -- diesel setup && cargo watch -x run"
+    networks:
+      - backend
 
   db:
-    image: "postgres"
+    image: postgres
+    container_name: postgres-db
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=analyzer
     ports: 
       - "5432:5432"
-    volumes:
+    volumes: 
       - db-data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_USER: "${POSTGRES_USER}"
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
-      POSTGRES_DB: "${POSTGRES_DB}"
+    networks:
+      - backend
 
-# cargo will try to redownload packages @ docker-compose up so store them here.
+  frontend:
+    image: smite-analyzer-frontend
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: smite-analyzer-frontend
+    volumes: 
+      - ./frontend/src:/app/src
+    command: npm run dev:watch
+    ports: 
+      - "3000:8080"
+    networks:
+      - backend
+    env_file:
+      - .env
+
 volumes:
   db-data: {}
+
+networks:
+  backend:
+    name: backend
