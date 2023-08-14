@@ -1,0 +1,13 @@
+FROM node:20-slim
+
+WORKDIR /app
+
+COPY frontend/tsconfig*.json ./
+
+COPY frontend/package*.json ./
+
+RUN npm install
+
+COPY frontend /app
+
+RUN npm run build
