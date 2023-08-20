@@ -8,6 +8,10 @@ services:
     image: smite-analyzer-api:local
     ports: 
       - "8030:8080"
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}"
+      SMITE_DEV_KEY: "${SMITE_DEV_KEY}"
+      SMITE_DEV_ID: "${SMITE_DEV_ID}"
     env_file:
       - .env
     volumes:

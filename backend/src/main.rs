@@ -32,8 +32,13 @@ lazy_static! {
 async fn main() -> std::io::Result<()> {
     println!("REST server started.");
 
-    HttpServer::new(|| App::new().service(get_all_motds))
-        .bind(("0.0.0.0", 8080))?
-        .run()
-        .await
+    HttpServer::new(|| {
+        //TODO: Set explicit cors policy.
+        let cors = actix_cors::Cors::permissive();
+
+        App::new().wrap(cors).service(get_all_motds)
+    })
+    .bind(("0.0.0.0", 8080))?
+    .run()
+    .await
 }

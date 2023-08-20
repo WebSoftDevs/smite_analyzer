@@ -13,4 +13,3 @@ pub fn open_connection() -> PgConnection {
     )
     .expect("Error connecting to database")
 }
-
